@@ -1,4 +1,5 @@
 import React from 'react';
+import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, ClipboardCheck, Clock, User, Bell, Settings, LogOut, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -42,14 +43,39 @@ const PatientPortal = () => {
     navigate('/login');
   };
 
-  const upcomingAppointments = [
-    { id: 1, doctor: 'Dr. Smith', date: '2024-05-30', time: '9:00 AM', type: 'Check-up', status: 'Confirmed' },
-    { id: 2, doctor: 'Dr. Johnson', date: '2024-06-15', time: '10:30 AM', type: 'Follow-up', status: 'Pending' },
-  ];
-  const reminders = [
-    { id: 1, message: 'Appointment tomorrow at 9:00 AM', status: 'Delivered' },
-    { id: 2, message: 'Follow-up in 2 days', status: 'Pending' },
-  ];
+  const [appointments, setAppointments] = React.useState([]);
+  const [reminders, setReminders] = React.useState([]);
+  const [medicalHistory, setMedicalHistory] = React.useState([]);
+  const [loadingAppointments, setLoadingAppointments] = React.useState(false);
+  const [loadingReminders, setLoadingReminders] = React.useState(false);
+  const [loadingMedical, setLoadingMedical] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  // Fetch data for the patient (simulate userId or get from auth context)
+  React.useEffect(() => {
+    if (section === 'appointments' || section === 'dashboard') {
+      setLoadingAppointments(true);
+      axios.get('http://localhost:5000/api/appointments?patient=me')
+        .then(res => setAppointments(res.data))
+        .catch(() => setError('Failed to fetch appointments'))
+        .finally(() => setLoadingAppointments(false));
+    }
+    if (section === 'reminders' || section === 'dashboard') {
+      setLoadingReminders(true);
+      axios.get('http://localhost:5000/api/reminders?patient=me')
+        .then(res => setReminders(res.data))
+        .catch(() => setError('Failed to fetch reminders'))
+        .finally(() => setLoadingReminders(false));
+    }
+    if (section === 'medical' || section === 'dashboard') {
+      setLoadingMedical(true);
+      axios.get('http://localhost:5000/api/patients/me/medical-history')
+        .then(res => setMedicalHistory(res.data))
+        .catch(() => setError('Failed to fetch medical records'))
+        .finally(() => setLoadingMedical(false));
+    }
+  }, [section]);
+
 
   // Sidebar navigation items
   const navItems = [
@@ -73,37 +99,98 @@ const PatientPortal = () => {
         return (
           <div>
             <h2 className="text-2xl font-bold mb-2">Appointments</h2>
-            <ul>
-              {upcomingAppointments.map(app => (
-                <li key={app.id} className="mb-2">
-                  <strong>{app.doctor}</strong> - {app.type} on {app.date} at {app.time} ({app.status})
-                </li>
-              ))}
-            </ul>
+            {loadingAppointments ? <p>Loading...</p> : null}
+            {error && <p className="text-red-600">{error}</p>}
+            <table className="min-w-full bg-white dark:bg-gray-800 rounded shadow">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Doctor</th>
+                  <th className="px-4 py-2">Type</th>
+                  <th className="px-4 py-2">Date</th>
+                  <th className="px-4 py-2">Time</th>
+                  <th className="px-4 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.length === 0 ? (
+                  <tr><td colSpan={5} className="text-center">No appointments found.</td></tr>
+                ) : appointments.map(app => (
+                  <tr key={app._id || app.id}>
+                    <td className="px-4 py-2">{app.doctor}</td>
+                    <td className="px-4 py-2">{app.type}</td>
+                    <td className="px-4 py-2">{app.date}</td>
+                    <td className="px-4 py-2">{app.time}</td>
+                    <td className="px-4 py-2">{app.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         );
       case 'reminders':
         return (
           <div>
             <h2 className="text-2xl font-bold mb-2">Reminders</h2>
-            <ul>
-              {reminders.map(rem => (
-                <li key={rem.id} className="mb-2">
-                  {rem.message} <span className={rem.status === 'Delivered' ? 'text-green-600' : 'text-yellow-600'}>({rem.status})</span>
-                </li>
-              ))}
-            </ul>
+            {loadingReminders ? <p>Loading...</p> : null}
+            {error && <p className="text-red-600">{error}</p>}
+            <table className="min-w-full bg-white dark:bg-gray-800 rounded shadow">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Message</th>
+                  <th className="px-4 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reminders.length === 0 ? (
+                  <tr><td colSpan={2} className="text-center">No reminders found.</td></tr>
+                ) : reminders.map(rem => (
+                  <tr key={rem._id || rem.id}>
+                    <td className="px-4 py-2">{rem.message}</td>
+                    <td className={"px-4 py-2 " + (rem.status === 'Delivered' ? 'text-green-600' : 'text-yellow-600')}>{rem.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         );
-      case 'settings':
+      case 'medical':
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-2">Settings</h2>
-            <ul className="list-disc pl-6">
-              <li>Email: <span className="font-mono">john@demo.com</span></li>
-              <li>Notifications: Enabled</li>
-              <li>Theme: Light/Dark</li>
-            </ul>
+            <h2 className="text-2xl font-bold mb-2">Medical Records</h2>
+            {loadingMedical ? <p>Loading...</p> : null}
+            {error && <p className="text-red-600">{error}</p>}
+            <table className="min-w-full bg-white dark:bg-gray-800 rounded shadow">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">#</th>
+                  <th className="px-4 py-2">Record</th>
+                </tr>
+              </thead>
+              <tbody>
+                {medicalHistory.length === 0 ? (
+                  <tr><td colSpan={2} className="text-center">No medical records found.</td></tr>
+                ) : medicalHistory.map((record, idx) => (
+                  <tr key={idx}>
+                    <td className="px-4 py-2">{idx + 1}</td>
+                    <td className="px-4 py-2">{record}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex justify-end mt-4">
+              <button
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                onClick={() => {
+                  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(medicalHistory));
+                  const dlAnchorElem = document.createElement('a');
+                  dlAnchorElem.setAttribute("href", dataStr);
+                  dlAnchorElem.setAttribute("download", "medical-records.json");
+                  dlAnchorElem.click();
+                }}
+              >
+                Download Records
+              </button>
+            </div>
           </div>
         );
       default:
@@ -216,7 +303,7 @@ const PatientPortal = () => {
                   )}
                   
                   <div className="flex justify-center mt-4">
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => navigate('/patient-portal?section=appointments')}>
                       <Calendar className="w-4 h-4 mr-2" />
                       View All Appointments
                     </Button>
@@ -241,7 +328,7 @@ const PatientPortal = () => {
                   </div>
                   
                   <div className="flex justify-center mt-4">
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => navigate('/patient-portal?section=reminders')}>
                       <Bell className="w-4 h-4 mr-2" />
                       Manage Reminders
                     </Button>
@@ -266,7 +353,7 @@ const PatientPortal = () => {
                   </p>
                   
                   <div className="flex justify-center mt-4">
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => navigate('/patient-portal?section=medical')}>
                       <ClipboardCheck className="w-4 h-4 mr-2" />
                       View Records
                     </Button>
@@ -289,7 +376,7 @@ const PatientPortal = () => {
                   </p>
                   
                   <div className="flex justify-center mt-4">
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => navigate('/patient-portal?section=settings')}>
                       <Settings className="w-4 h-4 mr-2" />
                       Edit Preferences
                     </Button>

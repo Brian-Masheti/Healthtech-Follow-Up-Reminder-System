@@ -9,12 +9,18 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
   // Try to get doctor name from localStorage (adjust key if needed)
   const { theme, setTheme } = useTheme();
-  let doctorName = '';
+  let userName = '';
+  let userRole = '';
+  let userEmail = '';
   try {
     const user = JSON.parse(localStorage.getItem('healthcareUser') || '{}');
-    doctorName = user?.name || user?.doctorName || user?.email || '';
+    userName = user?.name || '';
+    userRole = user?.role || '';
+    userEmail = user?.email || '';
   } catch {
-    doctorName = '';
+    userName = '';
+    userRole = '';
+    userEmail = '';
   }
 
   const handleLogout = () => {
@@ -29,7 +35,15 @@ const Navbar: React.FC = () => {
         <span className="font-semibold text-xl text-gray-800">HealthCare Reminders</span>
       </div>
       <div className="flex items-center gap-4">
-        <span className="font-medium text-gray-700">{doctorName ? `Dr. ${doctorName}` : ''}</span>
+        <span className="font-medium text-gray-700">
+  {userName && userRole && (
+    userRole === 'admin' ? `Admin: ${userName}` :
+    userRole === 'provider' ? `Dr. ${userName}` :
+    userRole === 'patient' ? `Patient: ${userName}` :
+    userName
+  )}
+  {userEmail ? ` (${userEmail})` : ''}
+</span>
         <Button
           variant="ghost"
           size="icon"

@@ -74,11 +74,6 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ doctorName, onAdd
             New Reminder
           </Button>
         </div>
-        </div>
-        <Button className="medical-gradient text-white">
-          <Calendar className="w-4 h-4 mr-2" />
-          New Appointment
-        </Button>
       </div>
 
       {/* Stats Grid */}

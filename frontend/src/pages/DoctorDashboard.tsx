@@ -10,6 +10,46 @@ import { Edit2, Trash2 } from 'lucide-react';
 
 
 const DoctorDashboard = () => {
+  // ...existing state
+  const [showMedicalModal, setShowMedicalModal] = useState(false);
+  const [medicalPatient, setMedicalPatient] = useState(null);
+  const [medicalHistory, setMedicalHistory] = useState([]);
+  const [loadingMedical, setLoadingMedical] = useState(false);
+  const [medicalError, setMedicalError] = useState('');
+  const [newMedicalEntry, setNewMedicalEntry] = useState('');
+
+  const handleEditPatient = (patient) => {
+    setMedicalPatient(patient);
+    setShowMedicalModal(true);
+    setLoadingMedical(true);
+    setMedicalError('');
+    axios.get(`http://localhost:5000/api/patients/${patient._id || patient.id}/medical-history`)
+      .then(res => setMedicalHistory(res.data))
+      .catch(() => setMedicalError('Failed to fetch medical history'))
+      .finally(() => setLoadingMedical(false));
+  };
+
+  const handleSaveMedicalHistory = () => {
+    setLoadingMedical(true);
+    axios.put(`http://localhost:5000/api/patients/${medicalPatient._id || medicalPatient.id}/medical-history`, {
+      medicalHistory
+    })
+      .then(() => setShowMedicalModal(false))
+      .catch(() => setMedicalError('Failed to update medical history'))
+      .finally(() => setLoadingMedical(false));
+  };
+
+  const handleAddMedicalEntry = () => {
+    if (newMedicalEntry.trim()) {
+      setMedicalHistory([...medicalHistory, newMedicalEntry.trim()]);
+      setNewMedicalEntry('');
+    }
+  };
+
+  const handleRemoveMedicalEntry = (idx) => {
+    setMedicalHistory(medicalHistory.filter((_, i) => i !== idx));
+  };
+
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
@@ -347,8 +387,7 @@ const DoctorDashboard = () => {
                         <TableCell>{p.email}</TableCell>
                         <TableCell>{p.phone}</TableCell>
                         <TableCell>
-                          <Button size="icon" variant="ghost" className="hover:bg-green-100" title="Edit"><Edit2 className="w-4 h-4 text-green-600" /></Button>
-                          <Button size="icon" variant="ghost" className="hover:bg-red-100" title="Delete"><Trash2 className="w-4 h-4 text-red-600" /></Button>
+                          <Button size="icon" variant="ghost" className="hover:bg-green-100" title="Edit" onClick={() => handleEditPatient(p)}><Edit2 className="w-4 h-4 text-green-600" /></Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -364,6 +403,20 @@ const DoctorDashboard = () => {
                       <div className="flex space-x-2">
                         <Button type="submit" className="bg-green-600 text-white flex-1">Save</Button>
                         <Button type="button" variant="outline" onClick={() => setShowPatientModal(false)} className="flex-1">Cancel</Button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+                {showMedicalModal && (
+                  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+                    <form onSubmit={handleSaveMedicalHistory} className="bg-white p-6 rounded-lg shadow-lg space-y-4 w-80">
+                      <h3 className="text-lg font-bold">Update Medical History</h3>
+                      {loadingMedical ? <p>Loading...</p> : null}
+                      {error && <p className="text-red-600">{error}</p>}
+                      <textarea value={Array.isArray(medicalHistory) ? medicalHistory.join('\n') : ''} onChange={e => setMedicalHistory(e.target.value.split('\n'))} className="w-full border px-2 py-1 rounded" required />
+                      <div className="flex space-x-2">
+                        <Button type="submit" className="bg-green-600 text-white flex-1">Save</Button>
+                        <Button type="button" variant="outline" onClick={() => setShowMedicalModal(false)} className="flex-1">Cancel</Button>
                       </div>
                     </form>
                   </div>

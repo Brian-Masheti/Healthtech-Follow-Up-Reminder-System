@@ -155,9 +155,24 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
                 )}
                 <span className="sr-only">Toggle theme</span>
               </Button>
-              <Button variant="ghost" size="sm" className="hidden md:flex text-sm">
-                Dr. Sarah Johnson
-              </Button>
+              <span className="hidden md:flex text-sm font-medium text-gray-700 dark:text-gray-200 items-center">
+                {(() => {
+                  try {
+                    const user = JSON.parse(localStorage.getItem('healthcareUser') || '{}');
+                    const userName = user?.name || '';
+                    const userRole = user?.role || '';
+                    if (userName && userRole) {
+                      if (userRole === 'admin') return `Admin: ${userName}`;
+                      if (userRole === 'provider') return `Dr. ${userName}`;
+                      if (userRole === 'patient') return `Patient: ${userName}`;
+                      return userName;
+                    }
+                    return '';
+                  } catch {
+                    return '';
+                  }
+                })()}
+              </span>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout}>
                 <LogOut className="h-5 w-5" />
                 <span className="sr-only">Log out</span>

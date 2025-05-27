@@ -1,5 +1,29 @@
 import Patient from '../models/Patient.js';
 
+// Get a patient's medical history
+export const getMedicalHistory = async (req, res, next) => {
+  try {
+    const patient = await Patient.findById(req.params.id);
+    if (!patient) return res.status(404).json({ message: 'Patient not found' });
+    res.json(patient.medicalHistory || []);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Update a patient's medical history
+export const updateMedicalHistory = async (req, res, next) => {
+  try {
+    const patient = await Patient.findById(req.params.id);
+    if (!patient) return res.status(404).json({ message: 'Patient not found' });
+    patient.medicalHistory = req.body.medicalHistory || [];
+    await patient.save();
+    res.json(patient.medicalHistory);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Get all patients
 export const getPatients = async (req, res, next) => {
   try {
